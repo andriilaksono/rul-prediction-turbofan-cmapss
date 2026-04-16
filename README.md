@@ -67,17 +67,18 @@ data/
 📦 rul-turbofan-prediction/
 │
 ├── 📂 notebook/                              
-│   ├── 📓 01_data_preprocessing.ipynb        # Data loading, EDA, RUL labeling, normalization  
-│   ├── 📓 02_xgboost_model.ipynb             # XGBoost training & evaluation
-│   └── 📓 03_lstm_model.ipynb                # LSTM training & evaluation
-│   └── 📓 04_comparison_visualization.ipynb  # Model comparison & final visualizations
+│   ├── 📓 01_data_preprocessing.ipynb        
+│   ├── 📓 02_exploratory_data_analysis.ipynb
+│   ├── 📓 03_xgboost_model.ipynb              
+│   ├── 📓 04_lstm_model.ipynb                 
+│   └── 📓 05_comparison_visualization.ipynb  
 │
-├── 📂 data/                              # Raw dataset (excluded from version control)
+├── 📂 data/                              
 │   ├── train_FD001.txt
 │   ├── test_FD001.txt
 │   └── RUL_FD001.txt
 │
-├── 📂 processed/                         # Preprocessed data (auto-generated)
+├── 📂 processed/                         
 │   ├── train_processed.csv
 │   ├── test_processed.csv
 │   ├── test_last_cycle.csv
@@ -86,25 +87,25 @@ data/
 │   ├── lstm_metrics.json
 │   └── all_predictions.csv
 │
-├── 📂 models/                            # Saved trained models (auto-generated)
+├── 📂 models/                            
 │   ├── xgb_model.pkl
-│   ├── lstm_best.keras
-│   └── lstm_final.keras
+│   ├── 
+│   └── 
 │
-├── 📂 output/                            # Figures for journal publication (auto-generated)
-│   ├── eda_lifecycle_distribution.png
-│   ├── eda_sensor_trends.png
-│   ├── eda_sensor_correlation.png
-│   ├── eda_rul_distribution.png
-│   ├── xgb_evaluation.png
+├── 📂 output/                           
 │   ├── xgb_feature_importance.png
-│   ├── lstm_learning_curve.png
-│   ├── lstm_evaluation.png
-│   ├── comparison_bar_chart.png
-│   ├── comparison_scatter.png
-│   ├── comparison_error_dist.png
-│   ├── comparison_per_unit.png
-│   └── nasa_score_detail.png
+│   └── xgb_pred_vs_actual_line.png
+│   
+│   
+│   
+│   
+│   
+│   
+│   
+│   
+│   
+│   
+│   
 │
 └── 📄 README.md
 ```
