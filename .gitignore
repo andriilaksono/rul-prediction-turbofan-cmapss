@@ -131,6 +131,3 @@ runs/
 .cache/
 tmp/
 temp/
-
-claude/
-gemini/
