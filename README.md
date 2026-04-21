@@ -274,8 +274,8 @@ This prevents the model from being overly influenced by the early healthy phase 
  
 | Model | RMSE ↓ | MAE ↓ | R² ↑ | NASA Score ↓ |
 |-------|--------|-------|------|--------------|
-| XGBoost | — | — | — | — |
-| LSTM    | — | — | — | — |
+| XGBoost | 17.69 | 12.89 | 0.8187 | 843 |
+| LSTM    | 15.52 | 12.25 | 0.8605 | 349 |
  
 All comparison figures are saved in the `output/` folder and are ready for journal submission.
  
