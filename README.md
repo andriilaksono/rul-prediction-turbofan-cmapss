@@ -295,10 +295,10 @@ All comparison figures are saved in the `output/` folder and are ready for journ
  
 | | |
 |-|-|
-| **Name** | *(your name)* |
-| **Study Program** | *(your study program)* |
-| **Institution** | *(your university)* |
-| **Year** | 2025 |
+| **Name** | Andri Laksono |
+| **Study Program** | Informatics |
+| **Institution** | Universitas Amikom Yogyakarta |
+| **Year** | 2026 |
  
 ---
  
