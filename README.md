@@ -88,24 +88,22 @@ data/
 │   └── all_predictions.csv
 │
 ├── 📂 models/                            
+│   ├── lstm_base_model.h5
 │   ├── xgb_model.pkl
-│   ├── 
-│   └── 
 │
 ├── 📂 output/                           
+│   ├── eda_all_sensors_trajectory.png
+│   ├── eda_correlation_bar.png
+│   ├── eda_health_state_grid.png
+│   ├── eda_lifespan_distribution.png
+│   ├── final_model_comparison.png
+│   ├── lstm_learning_curve.png
+│   ├── lstm_pred_vs_actual_line.png
+│   ├── xai_integrated_gradients.png
+│   ├── xai_shap_summary.png
+│   ├── xai_shap_waterfall.png
 │   ├── xgb_feature_importance.png
-│   └── xgb_pred_vs_actual_line.png
-│   
-│   
-│   
-│   
-│   
-│   
-│   
-│   
-│   
-│   
-│   
+│   ├── xgb_pred_vs_actual_line.png
 │
 └── 📄 README.md
 ```
