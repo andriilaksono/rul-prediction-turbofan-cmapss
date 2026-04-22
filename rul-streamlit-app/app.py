@@ -1,191 +1,91 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import tensorflow as tf
-import joblib
-import os
+import plotly.graph_objects as go
 
-# ==========================================
-# 1. KONFIGURASI HALAMAN UTAMA
-# ==========================================
-st.set_page_config(
-    page_title="Turbofan RUL Predictor",
-    page_icon="✈️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# 1. KONFIGURASI HALAMAN
+st.set_page_config(page_title="Pemantauan Individu Mesin", page_icon="✈️", layout="wide")
 
-# Kustomisasi CSS untuk mempercantik tampilan kartu metrik
-st.markdown("""
-    <style>
-    .stMetric {
-        background-color: #f0f2f6;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 2. FUNGSI LOAD MODEL (DI-CACHE AGAR CEPAT)
-# ==========================================
-@st.cache_resource
-def load_ml_models():
-    """Fungsi ini akan memuat model ke memori hanya sekali saat web dibuka"""
-    lstm_model = None
-    xgb_model = None
+# 2. GENERATOR DATA MOCKUP (Agar aplikasi langsung jalan)
+@st.cache_data
+def get_engine_data(engine_id):
+    np.random.seed(engine_id)
+    max_life = np.random.randint(150, 250)
+    cycles = np.arange(1, max_life + 1)
+    true_rul = np.clip(max_life - cycles, 0, 125)
+    pred_rul = np.clip(true_rul + np.random.normal(0, 4, size=max_life), 0, None)
     
-    # Load LSTM
-    lstm_path = 'models/lstm_best_model.h5'
-    if os.path.exists(lstm_path):
-        try:
-            # Gunakan dummy input untuk inisiasi weight jika perlu, atau langsung load .h5
-            lstm_model = tf.keras.models.load_model(lstm_path, compile=False)
-        except Exception as e:
-            st.sidebar.error(f"Gagal memuat LSTM: {e}")
-            
-    # Load XGBoost
-    xgb_path = 'models/xgb_model.pkl'
-    if os.path.exists(xgb_path):
-        try:
-            xgb_model = joblib.load(xgb_path)
-        except Exception as e:
-            st.sidebar.error(f"Gagal memuat XGBoost: {e}")
-            
-    return lstm_model, xgb_model
-
-lstm_model, xgb_model = load_ml_models()
-
-# ==========================================
-# 3. SIDEBAR (KONTROL & INPUT)
-# ==========================================
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/e/e5/NASA_logo.svg", width=150)
-st.sidebar.title("⚙️ Konfigurasi Sistem")
-
-# Pilihan Model
-st.sidebar.subheader("1. Pilih Model Prediksi")
-model_choice = st.sidebar.radio(
-    "Arsitektur:",
-    ["Deep Learning (LSTM) - Rekomendasi", "Machine Learning (XGBoost)"]
-)
-
-st.sidebar.markdown("---")
-
-# Input Data
-st.sidebar.subheader("2. Input Data Sensor")
-input_method = st.sidebar.radio("Metode Input:", ["Demo Interaktif (Manual)", "Upload File CSV"])
-
-# Variabel untuk menampung data input
-input_data = None
-
-if input_method == "Demo Interaktif (Manual)":
-    st.sidebar.info("Geser slider untuk mensimulasikan nilai sensor utama (T50 & Ps30).")
-    # Sensor yang paling berpengaruh dari hasil XAI kita
-    t50_val = st.sidebar.slider("T50 (Suhu LPT Outlet)", min_value=1380.0, max_value=1440.0, value=1410.0, step=0.5)
-    ps30_val = st.sidebar.slider("Ps30 (Tekanan Statis HPC)", min_value=46.5, max_value=48.5, value=47.5, step=0.1)
+    # Sensor Data
+    t50 = 1390 + (cycles / max_life) * 40 + np.random.normal(0, 1, size=max_life)
+    ps30 = 47.0 + (cycles / max_life) * 1.5 + np.random.normal(0, 0.05, size=max_life)
+    phi = 520 - (cycles / max_life) * 3 + np.random.normal(0, 0.1, size=max_life)
     
-    # Tombol Prediksi Manual
-    predict_btn = st.sidebar.button("Prediksi RUL Sekarang", type="primary")
+    return pd.DataFrame({
+        'Cycle': cycles, 'True RUL': true_rul, 'Predicted RUL': pred_rul,
+        'T50 (Suhu)': t50, 'Ps30 (Tekanan)': ps30, 'phi (Rasio BBM)': phi
+    }), max_life
 
-elif input_method == "Upload File CSV":
-    st.sidebar.info("Upload file CSV berisi log 30 siklus terakhir dari sensor mesin.")
-    uploaded_file = st.sidebar.file_uploader("Pilih file CSV", type=['csv'])
-    if uploaded_file is not None:
-        input_data = pd.read_csv(uploaded_file)
-        st.sidebar.success("File berhasil dimuat!")
-    
-    predict_btn = st.sidebar.button("Prediksi RUL dari File", type="primary")
+# 3. AREA KONTROL UTAMA (Pindah ke Main Area)
+st.title("📊 Pemantauan Individu Mesin Turbofan")
+st.markdown("Fokus pada analisis trajektori degradasi dan dinamika sensor per unit mesin.")
 
-# ==========================================
-# 4. KONTEN UTAMA (DASHBOARD)
-# ==========================================
-st.title("✈️ Predictive Maintenance: Turbofan Engine")
-st.markdown("Dashboard cerdas untuk memprediksi **Remaining Useful Life (RUL)** mesin pesawat berbasis dataset NASA C-MAPSS FD001.")
+# Baris Input (Tanpa Sidebar)
+col_input1, col_input2 = st.columns([1, 2])
 
+with col_input1:
+    engine_id = st.selectbox("Pilih ID Mesin:", [i for i in range(1, 101)], index=0)
+
+df_ts, max_life = get_engine_data(engine_id)
+
+with col_input2:
+    current_cycle = st.slider("Pilih Siklus Saat Ini:", 1, max_life, max_life-15)
+
+df_current = df_ts[df_ts['Cycle'] <= current_cycle]
+latest_rul = int(df_current['Predicted RUL'].iloc[-1])
+
+# 4. KPI METRICS
 st.markdown("---")
+m1, m2, m3 = st.columns(3)
 
-# Logika Prediksi
-if predict_btn:
-    with st.spinner('Menghitung estimasi sisa umur mesin...'):
-        rul_prediction = 0
-        
-        # MOCKUP LOGIC: Jika model asli belum ditaruh di folder 'models', gunakan rumus simulasi
-        # (Silakan hapus blok simulasi ini nanti jika model asli sudah berjalan sempurna)
-        if (model_choice == "Deep Learning (LSTM) - Rekomendasi" and lstm_model is None) or \
-           (model_choice == "Machine Learning (XGBoost)" and xgb_model is None):
-            
-            st.warning(f"⚠️ File model asli belum terdeteksi di folder `models/`. Menggunakan mode simulasi berdasarkan input manual.")
-            # Simulasi sederhana: RUL turun drastis jika suhu/tekanan naik
-            sim_rul = 150 - ((t50_val - 1380) * 2) - ((ps30_val - 46.5) * 20)
-            rul_prediction = max(0, int(sim_rul))
-            
-        else:
-            # ==========================================
-            # AREA EKSEKUSI MODEL ASLI (JIKA FILE TERSEDIA)
-            # ==========================================
-            try:
-                if input_method == "Demo Interaktif (Manual)":
-                    st.error("Untuk menggunakan model asli, harap gunakan metode 'Upload File CSV' agar fitur (21 sensor) lengkap.")
-                    st.stop()
-                
-                # Preprocessing data dari CSV (Sesuaikan dengan pipeline aslimu)
-                # Contoh: scaling menggunakan joblib scaler
-                # scaler = joblib.load('models/scaler.pkl')
-                # scaled_data = scaler.transform(input_data)
-                
-                if "LSTM" in model_choice:
-                    # Pastikan bentuknya (1, 30, n_features)
-                    # input_3d = scaled_data[-30:].reshape(1, 30, 21) 
-                    # rul_prediction = float(lstm_model.predict(input_3d)[0][0])
-                    pass # Ganti pass dengan kode di atas
-                else:
-                    # XGBoost
-                    # input_2d = scaled_data[-1:].reshape(1, -1)
-                    # rul_prediction = float(xgb_model.predict(input_2d)[0])
-                    pass
-            except Exception as e:
-                st.error(f"Terjadi kesalahan saat memproses data ke model: {e}")
-                st.stop()
-        
-        # ==========================================
-        # 5. VISUALISASI HASIL PREDIKSI
-        # ==========================================
-        # Menentukan Status Kesehatan
-        if rul_prediction > 80:
-            status = "SEHAT (Aman untuk Terbang)"
-            color = "green"
-            progress_val = min(100, int((rul_prediction/150)*100))
-        elif rul_prediction > 30:
-            status = "PERINGATAN (Butuh Perawatan Segera)"
-            color = "orange"
-            progress_val = min(100, int((rul_prediction/150)*100))
-        else:
-            status = "KRITIS (Ganti Mesin Segera!)"
-            color = "red"
-            progress_val = min(100, int((rul_prediction/150)*100))
+with m1:
+    st.metric("Siklus Berjalan", current_cycle)
+with m2:
+    st.metric("Estimasi Sisa Umur (RUL)", f"{latest_rul} Siklus")
+with m3:
+    if latest_rul > 80:
+        st.success("STATUS: AMAN")
+    elif latest_rul > 30:
+        st.warning("STATUS: PERINGATAN")
+    else:
+        st.error("STATUS: KRITIS")
 
-        # Tampilkan dalam kolom
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(label="Model Digunakan", value="LSTM" if "LSTM" in model_choice else "XGBoost")
-        with col2:
-            st.metric(label="Prediksi Sisa Umur (RUL)", value=f"{rul_prediction} Siklus")
-        with col3:
-            st.markdown(f"**Status Kesehatan Mesin:**")
-            st.markdown(f"<h3 style='color: {color}; margin-top: 0;'>{status}</h3>", unsafe_allow_html=True)
-            
-        st.markdown("### Indikator Keausan Mesin")
-        st.progress(progress_val, text=f"Estimasi Siklus Tersisa (Maksimal referensi ~150)")
+# 5. VISUALISASI
+col_g1, col_g2 = st.columns(2)
 
-        # Tambahan Info XAI (Explainable AI)
-        with st.expander("📊 Lihat Detail & Analisis Sensor (Explainable AI)"):
-            st.write("""
-            Berdasarkan ekstraksi fitur (Integrated Gradients / SHAP), penurunan angka RUL secara signifikan 
-            berkorelasi kuat dengan kenaikan suhu pada **LPT Outlet (T50)** dan tekanan statis pada **HPC Outlet (Ps30)**.
-            """)
-            if input_method == "Upload File CSV" and input_data is not None:
-                st.line_chart(input_data) # Menampilkan tren raw data dari CSV yang diupload
-else:
-    st.info("👈 Silakan atur konfigurasi di sidebar dan klik **Prediksi Sekarang** untuk melihat hasil.")
+with col_g1:
+    st.markdown("**📉 Trajektori RUL**")
+    fig_rul = go.Figure()
+    fig_rul.add_trace(go.Scatter(x=df_current['Cycle'], y=df_current['True RUL'], name="Actual", line=dict(dash='dash', color='gray')))
+    fig_rul.add_trace(go.Scatter(x=df_current['Cycle'], y=df_current['Predicted RUL'], name="LSTM Pred", line=dict(color='#2ca02c', width=3)))
+    
+    # --- TAMBAHKAN BARIS INI KEMBALI UNTUK ZONA BAHAYA ---
+    fig_rul.add_hrect(y0=0, y1=30, line_width=0, fillcolor="red", opacity=0.15, annotation_text="Zona Bahaya", annotation_position="bottom left")
+    # -----------------------------------------------------
+    
+    fig_rul.update_layout(height=350, margin=dict(l=0, r=0, t=20, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    st.plotly_chart(fig_rul, use_container_width=True)
+
+with col_g2:
+    st.markdown("**🌡️ Dinamika Sensor (Normalisasi)**")
+    selected_sensors = st.multiselect("Pilih Sensor:", ['T50 (Suhu)', 'Ps30 (Tekanan)', 'phi (Rasio BBM)'], default=['T50 (Suhu)', 'Ps30 (Tekanan)', 'phi (Rasio BBM)'])
+    
+    if selected_sensors:
+        fig_sens = go.Figure()
+        for s in selected_sensors:
+            # Normalisasi sederhana 0-1 untuk visualisasi
+            s_data = df_current[s]
+            s_norm = (s_data - s_data.min()) / (s_data.max() - s_data.min()) if s_data.max() != s_data.min() else s_data
+            fig_sens.add_trace(go.Scatter(x=df_current['Cycle'], y=s_norm, name=s))
+        
+        fig_sens.update_layout(height=280, margin=dict(l=0, r=0, t=10, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+        st.plotly_chart(fig_sens, use_container_width=True)
