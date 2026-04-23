@@ -279,18 +279,6 @@ This prevents the model from being overly influenced by the early healthy phase 
  
 All comparison figures are saved in the `output/` folder and are ready for journal submission.
  
----
- 
-## 📚 References
- 
-1. Saxena, A., & Goebel, K. (2008). *Turbofan Engine Degradation Simulation Data Set*. NASA Ames Prognostics Data Repository, Moffett Field, CA.
-2. Zheng, S., Ristovski, K., Farahat, A., & Gupta, C. (2017). *Long Short-Term Memory Network for Remaining Useful Life Estimation*. IEEE International Conference on Prognostics and Health Management (PHM).
-3. Chen, T., & Guestrin, C. (2016). *XGBoost: A Scalable Tree Boosting System*. Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining.
-4. Heimes, F. O. (2008). *Recurrent Neural Networks for Remaining Useful Life Estimation*. IEEE International Conference on Prognostics and Health Management (PHM).
-5. Li, X., Ding, Q., & Sun, J. Q. (2018). *Remaining Useful Life Estimation in Prognostics Using Deep Convolution Neural Networks*. Reliability Engineering & System Safety, 172, 1–11.
- 
----
- 
 ## 👤 Author
  
 | | |
