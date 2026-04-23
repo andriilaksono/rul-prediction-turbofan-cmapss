@@ -86,7 +86,7 @@ with col_g1:
     fig_rul.update_layout(height=350, margin=dict(l=0, r=0, t=20, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), 
         xaxis_title="Siklus Operasional (Time Cycle)",  
         yaxis_title="Sisa Umur Mesin (RUL)")
-    st.plotly_chart(fig_rul, use_container_width=True)
+    st.plotly_chart(fig_rul, use_container_width="stretch")
 
 with col_g2:
     st.markdown("**Dinamika Sensor (Normalisasi)**")
@@ -102,4 +102,4 @@ with col_g2:
         fig_sens.update_layout(height=280, margin=dict(l=0, r=0, t=10, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), 
             xaxis_title="Siklus Operasional (Time Cycle)",
             yaxis_title="Skala Normalisasi (0 - 1)")
-        st.plotly_chart(fig_sens, use_container_width=True)
+        st.plotly_chart(fig_sens, use_container_width="stretch")
