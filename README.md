@@ -116,8 +116,6 @@ This notebook compares the final performance of XGBoost and LSTM models. It comb
 - `all_predictions.csv`
 - Final comparison charts
 - Performance summary tables
-
----
  
 ---
  
