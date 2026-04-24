@@ -61,52 +61,63 @@ data/
  
 ---
  
-## 📁 Project Structure
- 
-```
-📦 rul-turbofan-prediction/
-│
-├── 📂 notebook/                              
-│   ├── 📓 01_data_preprocessing.ipynb        
-│   ├── 📓 02_exploratory_data_analysis.ipynb
-│   ├── 📓 03_xgboost_model.ipynb              
-│   ├── 📓 04_lstm_model.ipynb                 
-│   └── 📓 05_comparison_visualization.ipynb  
-│
-├── 📂 data/                              
-│   ├── train_FD001.txt
-│   ├── test_FD001.txt
-│   └── RUL_FD001.txt
-│
-├── 📂 processed/                         
-│   ├── train_processed.csv
-│   ├── test_processed.csv
-│   ├── test_last_cycle.csv
-│   ├── feature_cols.json
-│   ├── xgb_predictions.csv
-│   ├── lstm_metrics.json
-│   └── all_predictions.csv
-│
-├── 📂 models/                            
-│   ├── lstm_base_model.h5
-│   ├── xgb_model.pkl
-│
-├── 📂 output/                           
-│   ├── eda_all_sensors_trajectory.png
-│   ├── eda_correlation_bar.png
-│   ├── eda_health_state_grid.png
-│   ├── eda_lifespan_distribution.png
-│   ├── final_model_comparison.png
-│   ├── lstm_learning_curve.png
-│   ├── lstm_pred_vs_actual_line.png
-│   ├── xai_integrated_gradients.png
-│   ├── xai_shap_summary.png
-│   ├── xai_shap_waterfall.png
-│   ├── xgb_feature_importance.png
-│   ├── xgb_pred_vs_actual_line.png
-│
-└── 📄 README.md
-```
+## 📁 Notebook Descriptions
+
+This project is organized into five main notebooks, where each notebook represents one stage of the RUL prediction pipeline.
+
+### 📓 01_data_preprocessing.ipynb
+This notebook performs all data preparation steps before modeling. It loads the raw NASA C-MAPSS FD001 dataset, assigns column names, calculates Remaining Useful Life (RUL) targets, applies RUL capping, removes low-variance sensors, and normalizes selected features using MinMaxScaler. The processed datasets are then saved for downstream modeling. :contentReference[oaicite:0]{index=0}
+
+**Main outputs:**
+- `train_processed.csv`
+- `test_processed.csv`
+- `test_last_cycle.csv`
+- `feature_cols.json`
+
+---
+
+### 📓 02_exploratory_data_analysis.ipynb
+This notebook focuses on exploratory data analysis (EDA) to better understand engine degradation patterns and feature behavior. It visualizes sensor trajectories over time, feature correlations with RUL, engine lifespan distributions, and health-state transitions. The generated plots are useful for interpretation and publication figures. :contentReference[oaicite:1]{index=1}
+
+**Main outputs:**
+- Sensor trend visualizations
+- Correlation analysis plots
+- Health-state charts
+- Lifespan distribution charts
+
+---
+
+### 📓 03_xgboost_model.ipynb
+This notebook builds the XGBoost regression model for RUL prediction. It engineers rolling statistical features from time-series sensor data, trains the model, evaluates performance using multiple regression metrics, and applies explainability techniques such as SHAP for feature importance analysis. :contentReference[oaicite:2]{index=2}
+
+**Main outputs:**
+- `xgb_model.pkl`
+- `xgb_predictions.csv`
+- SHAP visualizations
+- Feature importance plots
+
+---
+
+### 📓 04_lstm_model.ipynb
+This notebook develops the LSTM deep learning model to capture sequential dependencies in sensor data. It creates sliding-window sequences, trains the network with callbacks such as early stopping, evaluates prediction accuracy, and applies Integrated Gradients for model interpretability. :contentReference[oaicite:3]{index=3}
+
+**Main outputs:**
+- `lstm_base_model.h5`
+- `lstm_metrics.json`
+- Learning curve plots
+- Integrated Gradients visualizations
+
+---
+
+### 📓 05_comparison_visualization.ipynb
+This notebook compares the final performance of XGBoost and LSTM models. It combines prediction results, summarizes evaluation metrics (RMSE, MAE, R², NASA Score), and creates final comparison figures suitable for reports, presentations, or journal publications. :contentReference[oaicite:4]{index=4}
+
+**Main outputs:**
+- `all_predictions.csv`
+- Final comparison charts
+- Performance summary tables
+
+---
  
 ---
  
