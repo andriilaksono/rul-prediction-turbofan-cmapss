@@ -19,7 +19,6 @@ Proyek ini mengimplementasikan dan membandingkan dua pendekatan machine learning
 - [Cara Penggunaan](#cara-penggunaan)
 - [Hasil Evaluasi](#hasil-evaluasi)
 - [Explainable AI (XAI)](#explainable-ai-xai)
-- [Referensi](#referensi)
 
 ---
 
