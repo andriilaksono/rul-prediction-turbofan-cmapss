@@ -257,7 +257,7 @@ Model dievaluasi menggunakan 4 metrik:
 | **RMSE** | Root Mean Squared Error — semakin rendah semakin baik |
 | **MAE** | Mean Absolute Error — semakin rendah semakin baik |
 | **R²** | Koefisien determinasi — semakin tinggi semakin baik |
-| **NASA Score** | Asymmetric scoring function PHM Challenge 2008 — semakin rendah semakin baik; memberikan penalti lebih besar pada prediksi *terlalu optimis* |
+| **NASA Score** | semakin rendah semakin baik; memberikan penalti lebih besar pada prediksi *terlalu optimis* |
 
 > Hasil lengkap tersimpan di `processed/master_comparison.csv` setelah menjalankan Notebook 05.
 
@@ -293,11 +293,3 @@ streamlit run app.py
 
 ---
 
-## Referensi
-
-1. Saxena, A., et al. (2008). *Damage propagation modeling for aircraft engine run-to-failure simulation*. PHM 2008.
-2. Heimes, F. O. (2008). *Recurrent neural networks for remaining useful life estimation*. PHM 2008.
-3. Zheng, S., et al. (2017). *Long short-term memory network for remaining useful life estimation*. IEEE PHM.
-4. Li, X., et al. (2018). *Remaining useful life estimation in prognostics using deep convolution neural networks*. Reliability Engineering & System Safety.
-5. Ellefsen, A. L., et al. (2019). *Remaining useful life predictions for turbofan engine degradation using semi-supervised deep architecture*. Reliability Engineering & System Safety.
-6. Sundararajan, M., Taly, A., & Yan, Q. (2017). *Axiomatic attribution for deep networks*. ICML 2017.
