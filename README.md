@@ -1,308 +1,303 @@
-# 🔧 Remaining Useful Life (RUL) Prediction of Turbofan Engines
-### A Comparative Analysis of XGBoost and LSTM on NASA C-MAPSS FD001
- 
-> This research compares the performance of **XGBoost** and **LSTM** in predicting the *Remaining Useful Life* (RUL) of turbofan engines using the NASA C-MAPSS benchmark dataset, sub-dataset FD001.
- 
+# 🔧 Prediksi Remaining Useful Life (RUL) Turbin Jet — C-MAPSS Dataset
+
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.17.0-orange?logo=tensorflow)](https://www.tensorflow.org/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-2.1.1-green)](https://xgboost.readthedocs.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Proyek ini mengimplementasikan dan membandingkan dua pendekatan machine learning untuk memprediksi **Remaining Useful Life (RUL)** mesin turbin jet menggunakan dataset **C-MAPSS (Commercial Modular Aero-Propulsion System Simulation)** dari NASA — mencakup 4 subset (FD001–FD004).
+
 ---
- 
-## 📋 Table of Contents
- 
-- [Background](#background)
+
+## 📑 Daftar Isi
+
+- [Latar Belakang](#latar-belakang)
 - [Dataset](#dataset)
-- [Project Structure](#project-structure)
-- [Pipeline Overview](#pipeline-overview)
-- [Installation](#installation)
-- [How to Run](#how-to-run)
-- [Model Architecture](#model-architecture)
-- [Evaluation Metrics](#evaluation-metrics)
-- [Results](#results)
-- [References](#references)
- 
+- [Arsitektur Model](#arsitektur-model)
+- [Struktur Proyek](#struktur-proyek)
+- [Instalasi](#instalasi)
+- [Cara Penggunaan](#cara-penggunaan)
+- [Hasil Evaluasi](#hasil-evaluasi)
+- [Explainable AI (XAI)](#explainable-ai-xai)
+- [Referensi](#referensi)
+
 ---
- 
-## 📖 Background
- 
-*Remaining Useful Life* (RUL) is the estimated number of operational cycles remaining before a component experiences failure. Accurate RUL prediction is critical in *Predictive Maintenance* (PdM) applications across the aerospace and manufacturing industries, enabling timely interventions that reduce unplanned downtime and maintenance costs.
- 
-This study compares two machine learning approaches:
-- **XGBoost** — a gradient boosting model applied to tabular features enriched with rolling statistics
-- **LSTM** — a deep learning model that leverages sequential temporal patterns in sensor data
- 
+
+## Latar Belakang
+
+Prediksi RUL merupakan komponen kritis dalam **Predictive Maintenance (PdM)** — memungkinkan tim perawatan untuk mengganti komponen tepat waktu sebelum terjadi kegagalan, sehingga mengurangi downtime dan biaya operasional.
+
+Proyek ini membandingkan dua paradigma model:
+
+| Model | Tipe | XAI Method |
+|---|---|---|
+| **XGBoost** | Gradient Boosted Trees (fitur 2D) | SHAP TreeExplainer |
+| **Bi-LSTM + Attention** | Deep Learning (sequence temporal) | Integrated Gradients |
+
+Evaluasi dilakukan pada **4 subset C-MAPSS** yang berbeda tingkat kompleksitasnya, dan hasilnya dibandingkan dengan benchmark literatur SOTA.
+
 ---
- 
-## 📦 Dataset
- 
-**NASA C-MAPSS (Commercial Modular Aero-Propulsion System Simulation)**
- 
-| Sub-dataset | Operating Conditions | Fault Modes | Train Units | Test Units |
-|-------------|----------------------|-------------|-------------|------------|
-| **FD001**   | 1                    | 1           | 100         | 100        |
- 
-Download the dataset from:
-- Kaggle: https://www.kaggle.com/datasets/behrad3d/nasa-cmaps
-- NASA: https://data.nasa.gov
- 
-**Required files:**
+
+## Dataset
+
+Dataset yang digunakan adalah **NASA C-MAPSS Turbofan Engine Degradation Simulation**, tersedia di [NASA Prognostics Data Repository](https://www.nasa.gov/content/prognostics-center-of-excellence-data-set-repository).
+
+### Karakteristik Subset
+
+| Subset | Operating Conditions | Fault Modes | Train Engines | Test Engines |
+|--------|---------------------|-------------|---------------|--------------|
+| FD001  | 1                   | 1           | 100           | 100          |
+| FD002  | 6                   | 1           | 260           | 259          |
+| FD003  | 1                   | 2           | 100           | 100          |
+| FD004  | 6                   | 2           | 249           | 248          |
+
+Setiap record memiliki **21 kolom sensor** (T2, T24, T30, T50, P2, P15, P30, Nf, Nc, epr, Ps30, phi, NRf, NRc, BPR, farB, htBleed, Nf_dmd, PCNfR_dmd, W31, W32) dan 3 kolom operational settings.
+
+> **Catatan:** Unduh dataset dan letakkan file `.txt` di direktori `data/`:
+> `train_FD001.txt`, `test_FD001.txt`, `RUL_FD001.txt`, … (hingga FD004)
+
+---
+
+## Arsitektur Model
+
+### 1. XGBoost Regressor
+
+Menggunakan representasi fitur 2D (rata-rata statistik per engine cycle). Hyperparameter berbasis kombinasi best-practice dari literatur SOTA:
+
 ```
-data/
-├── train_FD001.txt
-├── test_FD001.txt
-└── RUL_FD001.txt
+n_estimators    : 500 (800 untuk FD002/FD004)
+learning_rate   : 0.05
+max_depth       : 6 (8 untuk FD002/FD004)
+min_child_weight: 3
+subsample       : 0.8
+colsample_bytree: 0.8
 ```
- 
-**Column Description:**
- 
-| Column | Description |
-|--------|-------------|
-| `unit_number` | Engine ID (1–100) |
-| `time_in_cycles` | Current operational cycle |
-| `operational_setting_1,2,3` | Engine operating conditions |
-| `sensor_1` – `sensor_21` | Readings from 21 onboard sensors |
- 
----
- 
-## 📁 Notebook Descriptions
 
-This project is organized into five main notebooks, where each notebook represents one stage of the RUL prediction pipeline.
+### 2. Bi-LSTM + Self-Attention
 
-### 📓 01_data_preprocessing.ipynb
-This notebook performs all data preparation steps before modeling. It loads the raw NASA C-MAPSS FD001 dataset, assigns column names, calculates Remaining Useful Life (RUL) targets, applies RUL capping, removes low-variance sensors, and normalizes selected features using MinMaxScaler. The processed datasets are then saved for downstream modeling. :contentReference[oaicite:0]{index=0}
-
-**Main outputs:**
-- `train_processed.csv`
-- `test_processed.csv`
-- `test_last_cycle.csv`
-- `feature_cols.json`
-
----
-
-### 📓 02_exploratory_data_analysis.ipynb
-This notebook focuses on exploratory data analysis (EDA) to better understand engine degradation patterns and feature behavior. It visualizes sensor trajectories over time, feature correlations with RUL, engine lifespan distributions, and health-state transitions. The generated plots are useful for interpretation and publication figures. :contentReference[oaicite:1]{index=1}
-
-**Main outputs:**
-- Sensor trend visualizations
-- Correlation analysis plots
-- Health-state charts
-- Lifespan distribution charts
-
----
-
-### 📓 03_xgboost_model.ipynb
-This notebook builds the XGBoost regression model for RUL prediction. It engineers rolling statistical features from time-series sensor data, trains the model, evaluates performance using multiple regression metrics, and applies explainability techniques such as SHAP for feature importance analysis. :contentReference[oaicite:2]{index=2}
-
-**Main outputs:**
-- `xgb_model.pkl`
-- `xgb_predictions.csv`
-- SHAP visualizations
-- Feature importance plots
-
----
-
-### 📓 04_lstm_model.ipynb
-This notebook develops the LSTM deep learning model to capture sequential dependencies in sensor data. It creates sliding-window sequences, trains the network with callbacks such as early stopping, evaluates prediction accuracy, and applies Integrated Gradients for model interpretability. :contentReference[oaicite:3]{index=3}
-
-**Main outputs:**
-- `lstm_base_model.h5`
-- `lstm_metrics.json`
-- Learning curve plots
-- Integrated Gradients visualizations
-
----
-
-### 📓 05_comparison_visualization.ipynb
-This notebook compares the final performance of XGBoost and LSTM models. It combines prediction results, summarizes evaluation metrics (RMSE, MAE, R², NASA Score), and creates final comparison figures suitable for reports, presentations, or journal publications. :contentReference[oaicite:4]{index=4}
-
-**Main outputs:**
-- `all_predictions.csv`
-- Final comparison charts
-- Performance summary tables
- 
----
- 
-## 🔄 Pipeline Overview
- 
 ```
-Raw Data (C-MAPSS FD001)
-        │
-        ▼
-┌──────────────────────┐
-│  01 · Preprocessing  │  → EDA, RUL Labeling (cap=125), Feature Selection,
-└──────────────────────┘    MinMax Normalization
-        │
-        ▼
-   processed/
-   ├── train_processed.csv
-   └── test_last_cycle.csv
-        │
-   ┌────┴────┐
-   ▼         ▼
-┌──────────┐ ┌──────────┐
-│ 02 · XGB │ │ 03 · LSTM│
-└──────────┘ └──────────┘
-Rolling        Sequence
-Features       (window=30)
-(window=10)
-   │              │
-   └──────┬───────┘
-          ▼
-┌───────────────────────────┐
-│ 04 · Comparison & Output  │  → RMSE, MAE, R², NASA Score, Journal Figures
-└───────────────────────────┘
+Input  (window=30, n_features)
+   ↓
+Bidirectional LSTM (64 units, return_sequences=True) → Dropout(0.2)
+   ↓
+Bidirectional LSTM (32 units, return_sequences=True) → Dropout(0.2)
+   ↓
+Self-Attention Layer (Bahdanau-style, additive)
+   ↓
+Dense (32, ReLU) → Dropout(0.2)
+   ↓
+Dense (1)  →  RUL Prediction
 ```
- 
+
 ---
- 
-## ⚙️ Installation
- 
-### Prerequisites
-- Python >= 3.9
-- Jupyter Notebook or JupyterLab
- 
-### Install Dependencies
- 
+
+## Struktur Proyek
+
+```
+.
+├── data/                               # Dataset mentah C-MAPSS (tidak di-commit)
+│   ├── train_FD001.txt
+│   ├── test_FD001.txt
+│   ├── RUL_FD001.txt
+│   └── ...  (FD002–FD004)
+│
+├── notebook/                           # Notebook utama penelitian
+│   ├── 01_data_preprocessing.ipynb     # Preprocessing & feature engineering
+│   ├── 02_exploratory_data_analysis.ipynb  # EDA komparatif 4 subset
+│   ├── 03_xgboost_model.ipynb          # Training XGBoost + SHAP
+│   ├── 04_Bi-lstm_model.ipynb          # Training Bi-LSTM + Integrated Gradients
+│   └── 05_comparison_visualization.ipynb   # Komparasi & XAI side-by-side
+│
+├── processed/                          # Output preprocessing per-subset (tidak di-commit)
+│   ├── FD001/
+│   │   ├── train_2d.csv                # Fitur tabular + label RUL
+│   │   ├── test_2d.csv
+│   │   ├── train_seq.npy               # Sequence 3D untuk Bi-LSTM
+│   │   ├── test_seq.npy
+│   │   ├── xgb_metrics.json
+│   │   ├── lstm_metrics.json
+│   │   ├── xgb_shap_global.csv
+│   │   └── lstm_ig_global.csv
+│   ├── FD002/ ... FD004/
+│   └── master_comparison.csv           # Tabel komparasi akhir
+│
+├── models/                             # Model tersimpan (tidak di-commit)
+│   ├── xgb_FD001.pkl
+│   ├── bilstm_FD001.h5
+│   └── ...
+│
+├── output/                             # Semua visualisasi PNG (tidak di-commit)
+│   ├── eda_lifespan_4subsets.png
+│   ├── eda_correlation_4subsets.png
+│   ├── xgb_pred_FD001.png
+│   ├── comparison_metrics_grid.png
+│   └── ...
+│
+├── rul-streamlit-app/                  # Aplikasi web demo prediksi RUL (Streamlit)
+│
+├── .gitignore
+├── requirements.txt
+└── README.md
+```
+
+> **Catatan:** Direktori `data/`, `processed/`, `models/`, dan `output/` tidak di-commit ke repository (lihat `.gitignore`). Semua direktori tersebut di-generate ulang dengan menjalankan notebook secara berurutan.
+
+---
+
+## Instalasi
+
+### Prasyarat
+
+- Python 3.10+
+- pip
+
+### Langkah Instalasi
+
 ```bash
-pip install numpy pandas matplotlib seaborn scikit-learn xgboost tensorflow joblib
-```
- 
-Or using a virtual environment (recommended):
- 
-```bash
-# Create and activate virtual environment
+# 1. Clone repository
+git clone https://github.com/<username>/<repo-name>.git
+cd <repo-name>
+
+# 2. Buat virtual environment (opsional tapi disarankan)
 python -m venv venv
-source venv/bin/activate        # Linux / macOS
+source venv/bin/activate        # Linux/macOS
 venv\Scripts\activate           # Windows
- 
-# Install packages
-pip install numpy pandas matplotlib seaborn scikit-learn xgboost tensorflow joblib
+
+# 3. Install dependensi
+pip install -r requirements.txt
 ```
- 
-### Recommended Library Versions
- 
-| Library | Version |
-|---------|---------|
-| Python | >= 3.9 |
-| TensorFlow | >= 2.12 |
-| XGBoost | >= 1.7 |
-| scikit-learn | >= 1.2 |
-| pandas | >= 1.5 |
-| numpy | >= 1.23 |
- 
+
+### Dependensi Utama
+
+```
+numpy==1.26.4          # Komputasi numerik
+pandas==2.2.2          # Manipulasi data
+scikit-learn==1.5.2    # Preprocessing & metrik
+xgboost==2.1.1         # Model XGBoost
+tensorflow==2.17.0     # Model Bi-LSTM
+shap==0.46.0           # Explainability XGBoost (SHAP)
+matplotlib==3.8.4      # Visualisasi
+seaborn==0.13.2        # Visualisasi statistik
+```
+
 ---
- 
-## ▶️ How to Run
- 
-Run the notebooks **in order**:
- 
+
+## Cara Penggunaan
+
+Jalankan notebook secara berurutan dari dalam folder `notebook/`:
+
+### 1. Preprocessing Data
+
 ```bash
-# 1. Launch Jupyter
-jupyter notebook
- 
-# 2. Execute notebooks in the following sequence:
-#    01_data_preprocessing.ipynb      ← must run first
-#    02_xgboost_model.ipynb
-#    03_lstm_model.ipynb
-#    04_comparison_visualization.ipynb
+jupyter notebook notebook/01_data_preprocessing.ipynb
 ```
- 
-> ⚠️ **Important:** Notebooks 02, 03, and 04 depend on outputs generated by Notebook 01.  
-> Ensure Notebook 01 has been fully executed before proceeding to the next steps.
- 
----
- 
-## 🏗️ Model Architecture
- 
-### XGBoost
- 
-| Parameter | Value |
-|-----------|-------|
-| `n_estimators` | 500 (with early stopping) |
-| `max_depth` | 6 |
-| `learning_rate` | 0.05 |
-| `subsample` | 0.8 |
-| `colsample_bytree` | 0.8 |
-| `reg_alpha` (L1) | 0.1 |
-| `reg_lambda` (L2) | 1.0 |
-| Additional features | Rolling mean & std (window = 10 cycles) |
-| Validation strategy | 5-Fold Cross-Validation + Early Stopping |
- 
-### LSTM
- 
+
+Menghasilkan:
+- Pembersihan sensor konstan/non-informatif per subset
+- RUL labeling dengan metode *piecewise-linear* (threshold = 125 siklus)
+- **Condition-aware normalization** menggunakan KMeans (k=6) untuk FD002/FD004
+- File `train_2d.csv`, `test_2d.csv`, `train_seq.npy`, `test_seq.npy` di `processed/`
+
+### 2. Exploratory Data Analysis
+
+```bash
+jupyter notebook notebook/02_exploratory_data_analysis.ipynb
 ```
-Input  →  (30 cycles × n_features)
-               ↓
-  LSTM(128, return_sequences=True)
-  BatchNormalization → Dropout(0.3)
-               ↓
-  LSTM(64, return_sequences=False)
-  BatchNormalization → Dropout(0.3)
-               ↓
-    Dense(32, activation='relu')
-          Dropout(0.2)
-               ↓
-    Dense(1, activation='linear')   ←  RUL Output
+
+Menghasilkan:
+- Distribusi engine lifespan per subset
+- Korelasi sensor terhadap RUL (heatmap)
+- Trajektori sensor kunci (sensor T24)
+- Scatter plot operating conditions (FD002/FD004)
+
+### 3. Training XGBoost + SHAP
+
+```bash
+jupyter notebook notebook/03_xgboost_model.ipynb
 ```
- 
-| Parameter | Value |
-|-----------|-------|
-| Sequence length | 30 cycles |
-| Optimizer | Adam (lr = 0.001) |
-| Loss function | MSE |
-| Batch size | 256 |
-| Max epochs | 200 |
-| Early stopping patience | 20 epochs |
-| LR scheduler | ReduceLROnPlateau (factor = 0.5) |
- 
----
- 
-## 📊 Evaluation Metrics
- 
-| Metric | Formula | Description |
-|--------|---------|-------------|
-| **RMSE** | √(Σ(ŷ−y)²/n) | Root Mean Squared Error — penalizes large deviations |
-| **MAE** | Σ\|ŷ−y\|/n | Mean Absolute Error — robust to outliers |
-| **R²** | 1 − SS_res/SS_tot | Coefficient of determination — proportion of variance explained |
-| **NASA Score** | Σ(e^(d/13)−1) if d<0 ; Σ(e^(d/10)−1) if d≥0 | Asymmetric penalty score |
- 
-> **NASA Score** imposes a **higher penalty** when the predicted RUL exceeds the actual RUL (late prediction), as failing to detect imminent engine failure is considerably more hazardous than predicting it too early. **Lower is better.**
- 
-### RUL Labeling — Piecewise Linear Degradation
- 
-RUL is capped at **125 cycles** following the standard convention in C-MAPSS literature:
- 
+
+Menghasilkan:
+- Model `.pkl` per subset di `models/`
+- Metrik evaluasi (RMSE, MAE, R², NASA Score)
+- Visualisasi SHAP summary & waterfall plot
+- File `xgb_metrics.json` dan `xgb_shap_global.csv`
+
+### 4. Training Bi-LSTM + Integrated Gradients
+
+```bash
+jupyter notebook notebook/04_Bi-lstm_model.ipynb
 ```
-RUL(t) = min(max_cycle − t, 125)
+
+Menghasilkan:
+- Model `.h5` per subset di `models/`
+- Metrik evaluasi dan learning curves
+- Integrated Gradients attribution per sensor
+- File `lstm_metrics.json` dan `lstm_ig_global.csv`
+
+### 5. Komparasi & Visualisasi Akhir
+
+```bash
+jupyter notebook notebook/05_comparison_visualization.ipynb
 ```
- 
-This prevents the model from being overly influenced by the early healthy phase of engine operation, where degradation signals are not yet informative.
- 
+
+Menghasilkan:
+- Tabel master komparasi kedua model × 4 subset
+- Bar chart 4×4 semua metrik
+- XAI side-by-side (SHAP vs Integrated Gradients)
+- Benchmarking vs literatur SOTA
+
 ---
- 
-## 📈 Results
- 
-*(To be updated after experiments are complete)*
- 
-| Model | RMSE ↓ | MAE ↓ | R² ↑ | NASA Score ↓ |
-|-------|--------|-------|------|--------------|
-| XGBoost | 17.69 | 12.89 | 0.8187 | 843 |
-| LSTM    | 15.52 | 12.25 | 0.8605 | 349 |
- 
-All comparison figures are saved in the `output/` folder and are ready for journal submission.
- 
-## 👤 Author
- 
-| | |
-|-|-|
-| **Name** | Andri Laksono |
-| **Study Program** | Informatics |
-| **Institution** | Universitas Amikom Yogyakarta |
-| **Year** | 2026 |
- 
+
+## Hasil Evaluasi
+
+Model dievaluasi menggunakan 4 metrik:
+
+| Metrik | Keterangan |
+|--------|-----------|
+| **RMSE** | Root Mean Squared Error — semakin rendah semakin baik |
+| **MAE** | Mean Absolute Error — semakin rendah semakin baik |
+| **R²** | Koefisien determinasi — semakin tinggi semakin baik |
+| **NASA Score** | Asymmetric scoring function PHM Challenge 2008 — semakin rendah semakin baik; memberikan penalti lebih besar pada prediksi *terlalu optimis* |
+
+> Hasil lengkap tersimpan di `processed/master_comparison.csv` setelah menjalankan Notebook 05.
+
 ---
- 
-## 📄 License
- 
-This project is intended for academic research purposes. Please cite this work appropriately if you use the code or methodology in your own research.
- 
+
+## Explainable AI (XAI)
+
+Proyek ini menggunakan dua metode XAI untuk memahami keputusan model:
+
+### SHAP (untuk XGBoost)
+Menggunakan `shap.TreeExplainer` — memberikan kontribusi fitur berbasis nilai Shapley yang akurat dan efisien untuk tree-based models.
+
+### Integrated Gradients (untuk Bi-LSTM)
+Mengimplementasikan metode Sundararajan et al. (2017) secara native dengan TensorFlow:
+
+$$\text{IG}_i(x) = (x_i - x_i') \times \int_{\alpha=0}^{1} \frac{\partial F(x' + \alpha(x-x'))}{\partial x_i} \, d\alpha$$
+
+Visualisasi XAI side-by-side memungkinkan analisis apakah kedua model "sepakat" terhadap sensor yang paling berpengaruh pada prediksi RUL.
+
 ---
- 
-> *This research is conducted as part of a journal-track graduation requirement (in lieu of a conventional thesis).*
+
+## Aplikasi Demo (Streamlit)
+
+Folder `rul-streamlit-app/` berisi aplikasi web interaktif untuk melakukan prediksi RUL secara langsung menggunakan model yang telah dilatih.
+
+```bash
+cd rul-streamlit-app
+pip install -r requirements.txt   # jika ada requirements terpisah
+streamlit run app.py
+```
+
+> Pastikan model (`.pkl` / `.h5`) sudah dilatih dan tersimpan di `models/` sebelum menjalankan aplikasi.
+
+---
+
+## Referensi
+
+1. Saxena, A., et al. (2008). *Damage propagation modeling for aircraft engine run-to-failure simulation*. PHM 2008.
+2. Heimes, F. O. (2008). *Recurrent neural networks for remaining useful life estimation*. PHM 2008.
+3. Zheng, S., et al. (2017). *Long short-term memory network for remaining useful life estimation*. IEEE PHM.
+4. Li, X., et al. (2018). *Remaining useful life estimation in prognostics using deep convolution neural networks*. Reliability Engineering & System Safety.
+5. Ellefsen, A. L., et al. (2019). *Remaining useful life predictions for turbofan engine degradation using semi-supervised deep architecture*. Reliability Engineering & System Safety.
+6. Sundararajan, M., Taly, A., & Yan, Q. (2017). *Axiomatic attribution for deep networks*. ICML 2017.

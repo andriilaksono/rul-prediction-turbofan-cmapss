@@ -80,6 +80,7 @@ $RECYCLE.BIN/
 # ------------------------------------------------------------
 # Environment & secrets
 # ------------------------------------------------------------
+venv
 .env
 .env.*
 *.secret
@@ -131,3 +132,6 @@ runs/
 .cache/
 tmp/
 temp/
+
+notebook revisi/
+notebook Gemini/
